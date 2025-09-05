@@ -195,10 +195,6 @@ class PDFBuilder:
         except Exception as e:
             logger.error(f"PIL PDF creation failed: {e}")
             return None
-                
-        except Exception as e:
-            logger.error(f"PDF creation failed: {e}")
-            return None
     
     def _create_pdf_reportlab(self, story_data: Dict, images: Dict[str, str], output_path: Path) -> Optional[str]:
         """Create PDF using ReportLab"""
