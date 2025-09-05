@@ -39,7 +39,8 @@ class ImageGenerator:
     
     def generate_image(self, prompt: str, provider: str, style: str, size: str, 
                       openai_key: Optional[str] = None, stability_key: Optional[str] = None,
-                      page_num: int = 1) -> Optional[str]:
+                      page_num: int = 1, hf_token: Optional[str] = None,
+                      hf_model: Optional[str] = None) -> Optional[str]:
         """
         Generate an image based on the prompt and provider
         
@@ -68,6 +69,8 @@ class ImageGenerator:
                 success = self._generate_openai_image(prompt, openai_key, width, height, output_path)
             elif provider == "Stable Diffusion" and stability_key:
                 success = self._generate_stable_diffusion_image(prompt, stability_key, width, height, output_path)
+            elif provider in ("Hugging Face", "HuggingFace"):
+                success = self._generate_huggingface_image(prompt, width, height, output_path, hf_token, hf_model)
             elif provider == "Placeholder Mode":
                 # Use placeholder mode
                 success = self._generate_placeholder_image(prompt, style, width, height, output_path, page_num)
@@ -85,6 +88,38 @@ class ImageGenerator:
             logger.error(f"Image generation error: {e}")
             return self._generate_placeholder_image(prompt, style, 1024, 1024, 
                                                  self.temp_dir / f"page_{page_num}_fallback.png", page_num)
+
+    def _generate_huggingface_image(self, prompt: str, width: int, height: int, output_path: Path,
+                                    hf_token: Optional[str], hf_model: Optional[str]) -> bool:
+        """Generate image using Hugging Face Inference API.
+        Defaults to stabilityai/stable-diffusion-2-1. Token optional; if missing and 401, fall back.
+        """
+        try:
+            if not self.requests_available:
+                return False
+            model = hf_model or os.environ.get("HF_MODEL_NAME", "stabilityai/stable-diffusion-2-1")
+            url = f"https://api-inference.huggingface.co/models/{model}"
+            headers = {"Accept": "image/png"}
+            if hf_token:
+                headers["Authorization"] = f"Bearer {hf_token}"
+
+            payload = {
+                "inputs": prompt,
+                "options": {"wait_for_model": True},
+                # Some text-to-image pipelines look at width/height in parameters
+                "parameters": {"width": width, "height": height}
+            }
+            resp = requests.post(url, headers=headers, json=payload, timeout=120)
+            if resp.status_code == 200 and resp.content:
+                with open(output_path, 'wb') as f:
+                    f.write(resp.content)
+                return True
+            else:
+                logger.error(f"Hugging Face API error {resp.status_code}: {resp.text[:200]}")
+                return False
+        except Exception as e:
+            logger.error(f"Hugging Face generation failed: {e}")
+            return False
     
     def _parse_size(self, size_str: str) -> Tuple[int, int]:
         """Parse size string to width and height"""
