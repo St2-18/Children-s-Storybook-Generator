@@ -68,7 +68,7 @@ class PDFBuilder:
             
             # Try different PDF creation methods with fallback chain
             result_path: Optional[str] = None
-            errors: list[str] = []
+            errors = []
             
             if self.reportlab_available:
                 try:
@@ -128,7 +128,7 @@ class PDFBuilder:
                         logger.warning(f"PIL could not load image for page {page_number}: {e}")
                 return None
             
-            def wrap_text(draw: ImageDraw.ImageDraw, text: str, font, max_width: int) -> list[str]:
+            def wrap_text(draw: ImageDraw.ImageDraw, text: str, font, max_width: int):
                 words = text.split()
                 lines, line = [], []
                 for w in words:
@@ -154,7 +154,7 @@ class PDFBuilder:
                 small_font = ImageFont.load_default()
             
             # Build pages: title + 5 story pages
-            pil_pages: list[Image.Image] = []
+            pil_pages = []
             
             # Title page
             title_img = Image.new('RGB', (page_w, page_h), 'white')
