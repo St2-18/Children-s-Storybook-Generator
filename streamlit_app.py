@@ -169,7 +169,7 @@ class StorybookApp:
         # TTS Settings
         st.sidebar.subheader("🔊 Audio Settings")
         
-        enable_tts = st.sidebar.checkbox("Enable Text-to-Speech", value=True)
+        enable_tts = st.sidebar.checkbox("Enable Text-to-Speech", value=False)
         
         tts_provider = st.sidebar.selectbox(
             "TTS Provider",
