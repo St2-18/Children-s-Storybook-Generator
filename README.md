@@ -6,7 +6,6 @@ A complete Python Streamlit application that generates beautiful illustrated chi
 
 - **AI-Powered Story Generation**: Create 5-page children's stories using OpenAI GPT or local fallback
 - **Multiple Image Providers**: Support for OpenAI DALL-E, Stable Diffusion, and placeholder mode
-- **Multiple Image Providers**: Support for OpenAI DALL-E, Stable Diffusion, Hugging Face Inference API, and placeholder mode
 - **Character Consistency**: Maintain consistent character appearance across all pages
 - **Text-to-Speech**: Local (pyttsx3) and cloud (Google TTS, ElevenLabs) narration options
 - **PDF Export**: Generate printable storybook PDFs with images and text
@@ -56,10 +55,6 @@ export OPENAI_API_KEY="your-openai-api-key"
 
 # Stability AI (for Stable Diffusion images)
 export STABILITY_API_KEY="your-stability-api-key"
-
-# Hugging Face (optional alternative provider)
-export HF_TOKEN="your-hf-token"  # optional; some public models may work without a token
-export HF_MODEL_NAME="stabilityai/stable-diffusion-2-1"
 
 # ElevenLabs (for premium TTS)
 export ELEVENLABS_API_KEY="your-elevenlabs-api-key"

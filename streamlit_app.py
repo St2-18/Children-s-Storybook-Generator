@@ -222,7 +222,7 @@ class StorybookApp:
         
         image_provider = st.sidebar.selectbox(
             "Image Provider",
-            ["OpenAI DALL-E", "Stable Diffusion", "Hugging Face", "Placeholder Mode"],
+            ["OpenAI DALL-E", "Stable Diffusion", "Placeholder Mode"],
             help="Choose image generation method"
         )
         
@@ -254,17 +254,6 @@ class StorybookApp:
             help="For Stable Diffusion images (optional)"
         )
 
-        hf_token = st.sidebar.text_input(
-            "Hugging Face Token",
-            type="password",
-            help="For Hugging Face Inference API (optional)"
-        )
-
-        hf_model = st.sidebar.text_input(
-            "HF Model (optional)",
-            value="stabilityai/stable-diffusion-2-1",
-            help="Override default HF model"
-        )
         
         # TTS Settings
         st.sidebar.subheader("🔊 Audio Settings")
@@ -291,8 +280,6 @@ class StorybookApp:
             'image_size': image_size,
             'openai_key': openai_key,
             'stability_key': stability_key,
-            'hf_token': hf_token,
-            'hf_model': hf_model,
             'enable_tts': enable_tts,
             'tts_provider': tts_provider,
             'tts_key': tts_key
@@ -348,9 +335,7 @@ class StorybookApp:
                         size=settings['image_size'],
                         openai_key=settings['openai_key'],
                         stability_key=settings['stability_key'],
-                        page_num=page['page'],
-                        hf_token=settings.get('hf_token'),
-                        hf_model=settings.get('hf_model')
+                        page_num=page['page']
                     )
                     
                     if image_path:
