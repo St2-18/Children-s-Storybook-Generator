@@ -16,7 +16,95 @@ import logging
 # Import our custom modules
 from utils.story_generator import StoryGenerator
 from utils.image_generator import ImageGenerator
-from utils.pdf_builder import PDFBuilder
+# PDF builder import with safe fallback for Streamlit Cloud
+try:
+    from utils.pdf_builder import PDFBuilder
+except Exception as _pdf_import_err:
+    import logging as _logging
+    _logging.getLogger(__name__).error(f"Falling back to minimal PDF builder: {_pdf_import_err}")
+    from pathlib import Path as _Path
+    import tempfile as _tempfile
+    from typing import Dict as _Dict
+    try:
+        from PIL import Image as _PILImage, ImageDraw as _PILDraw, ImageFont as _PILFont
+    except Exception as _e:
+        _PILImage = None
+
+    class PDFBuilder:  # Minimal PIL-only fallback
+        def __init__(self):
+            self.temp_dir = _Path(_tempfile.gettempdir()) / "storybook_pdfs"
+            self.temp_dir.mkdir(exist_ok=True)
+
+        def create_pdf(self, story_data: _Dict, images: _Dict, output_filename: str = "storybook.pdf") -> str | None:
+            if _PILImage is None:
+                return None
+            try:
+                page_w, page_h = 1240, 1754
+                margin = 80
+                image_area_h = 900
+
+                def _get_img(page_num: int):
+                    path = images.get(page_num) or images.get(str(page_num))
+                    if path and _Path(path).exists():
+                        try:
+                            im = _PILImage.open(path).convert('RGB')
+                            im.thumbnail((page_w - 2*margin, image_area_h - margin))
+                            return im
+                        except Exception:
+                            return None
+                    return None
+
+                try:
+                    title_font = _PILFont.truetype("DejaVuSans-Bold.ttf", 48)
+                    body_font = _PILFont.truetype("DejaVuSans.ttf", 28)
+                    small_font = _PILFont.truetype("DejaVuSans.ttf", 22)
+                except Exception:
+                    title_font = _PILFont.load_default()
+                    body_font = _PILFont.load_default()
+                    small_font = _PILFont.load_default()
+
+                pages = []
+                # Title page
+                timg = _PILImage.new('RGB', (page_w, page_h), 'white')
+                d = _PILDraw.Draw(timg)
+                title = story_data.get('title', 'Storybook')
+                tw = d.textlength(title, font=title_font)
+                d.text(((page_w - tw)//2, page_h//3), title, fill='darkblue', font=title_font)
+                d.text((margin, page_h//3 + 120), "A Children's Story", fill='gray', font=body_font)
+                pages.append(timg)
+
+                for p in story_data.get('pages', []):
+                    canvas = _PILImage.new('RGB', (page_w, page_h), 'white')
+                    draw = _PILDraw.Draw(canvas)
+                    pnum = p.get('page', 1)
+                    im = _get_img(pnum)
+                    if im:
+                        x = (page_w - im.width)//2
+                        y = margin
+                        canvas.paste(im, (x, y))
+                    text_top = (margin + image_area_h) if im else margin
+                    draw.text((margin, text_top), f"Page {pnum}", fill='black', font=small_font)
+                    # simple wrap
+                    text = p.get('text', '')
+                    words, line, y = text.split(), [], text_top + 50
+                    for w in words:
+                        test = (' '.join(line+[w])).strip()
+                        if draw.textlength(test, font=body_font) <= (page_w - 2*margin):
+                            line.append(w)
+                        else:
+                            draw.text((margin, y), ' '.join(line), fill='black', font=body_font)
+                            y += 44
+                            line = [w]
+                    if line:
+                        draw.text((margin, y), ' '.join(line), fill='black', font=body_font)
+                    pages.append(canvas)
+
+                out = self.temp_dir / output_filename
+                if pages:
+                    pages[0].save(str(out), save_all=True, append_images=pages[1:], format='PDF')
+                return str(out) if out.exists() else None
+            except Exception:
+                return None
 from utils.tts_engine import TTSEngine
 from utils.character_manager import CharacterManager
 
