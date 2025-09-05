@@ -43,6 +43,13 @@ class PDFBuilder:
             self.img2pdf_available = True
         except ImportError:
             logger.warning("img2pdf not available")
+        
+        # PIL is required for final fallback
+        try:
+            from PIL import Image  # noqa: F401
+            self.pil_available = True
+        except Exception:
+            self.pil_available = False
     
     def create_pdf(self, story_data: Dict, images: Dict[str, str], output_filename: str = "storybook.pdf") -> Optional[str]:
         """
@@ -84,10 +91,109 @@ class PDFBuilder:
                     errors.append(f"img2pdf error: {e}")
                     logger.error(f"img2pdf error: {e}")
             
+            # Final fallback: PIL-only PDF assembly
+            if (not result_path or not Path(result_path).exists()) and getattr(self, 'pil_available', False):
+                try:
+                    result_path = self._create_pdf_pil(story_data, images, output_path)
+                except Exception as e:
+                    errors.append(f"PIL fallback error: {e}")
+                    logger.error(f"PIL fallback error: {e}")
+
             if result_path and Path(result_path).exists():
                 return result_path
             
             logger.error("PDF creation failed. " + ("; ".join(errors) if errors else "No engines available"))
+            return None
+
+    def _create_pdf_pil(self, story_data: Dict, images: Dict[str, str], output_path: Path) -> Optional[str]:
+        """Create a PDF using only Pillow (broadest compatibility in constrained envs)."""
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+            
+            # A4 at ~150 DPI
+            page_w, page_h = 1240, 1754
+            margin = 80
+            image_area_h = 900  # top area for image
+            
+            def get_img_for_page(page_number: int) -> Optional[Image.Image]:
+                path = images.get(page_number) or images.get(str(page_number))
+                if path and Path(path).exists():
+                    try:
+                        im = Image.open(path).convert('RGB')
+                        # Fit into image area keeping aspect ratio
+                        max_w, max_h = page_w - 2*margin, image_area_h - margin
+                        im.thumbnail((max_w, max_h))
+                        return im
+                    except Exception as e:
+                        logger.warning(f"PIL could not load image for page {page_number}: {e}")
+                return None
+            
+            def wrap_text(draw: ImageDraw.ImageDraw, text: str, font, max_width: int) -> list[str]:
+                words = text.split()
+                lines, line = [], []
+                for w in words:
+                    test = (' '.join(line+[w])).strip()
+                    if draw.textlength(test, font=font) <= max_width:
+                        line.append(w)
+                    else:
+                        if line:
+                            lines.append(' '.join(line))
+                        line = [w]
+                if line:
+                    lines.append(' '.join(line))
+                return lines
+            
+            # Fonts
+            try:
+                title_font = ImageFont.truetype("DejaVuSans-Bold.ttf", 48)
+                body_font = ImageFont.truetype("DejaVuSans.ttf", 28)
+                small_font = ImageFont.truetype("DejaVuSans.ttf", 22)
+            except Exception:
+                title_font = ImageFont.load_default()
+                body_font = ImageFont.load_default()
+                small_font = ImageFont.load_default()
+            
+            # Build pages: title + 5 story pages
+            pil_pages: list[Image.Image] = []
+            
+            # Title page
+            title_img = Image.new('RGB', (page_w, page_h), 'white')
+            d = ImageDraw.Draw(title_img)
+            title = story_data.get('title', 'Storybook')
+            tw = d.textlength(title, font=title_font)
+            d.text(((page_w - tw)//2, page_h//3), title, fill='darkblue', font=title_font)
+            d.text((margin, page_h//3 + 120), "A Children's Story", fill='gray', font=body_font)
+            pil_pages.append(title_img)
+            
+            # Story pages
+            for page in story_data.get('pages', []):
+                canvas = Image.new('RGB', (page_w, page_h), 'white')
+                draw = ImageDraw.Draw(canvas)
+                pnum = page.get('page', 1)
+                # image
+                im = get_img_for_page(pnum)
+                if im:
+                    x = (page_w - im.width)//2
+                    y = margin
+                    canvas.paste(im, (x, y))
+                # text
+                text_top = (margin + image_area_h) if im else margin
+                text_area_w = page_w - 2*margin
+                draw.text((margin, text_top), f"Page {pnum}", fill='black', font=small_font)
+                y_cursor = text_top + 50
+                lines = wrap_text(draw, page.get('text', ''), body_font, text_area_w)
+                for line in lines:
+                    draw.text((margin, y_cursor), line, fill='black', font=body_font)
+                    y_cursor += 44
+                pil_pages.append(canvas)
+            
+            # Save multi-page PDF
+            if pil_pages:
+                pil_pages[0].save(str(output_path), save_all=True, append_images=pil_pages[1:], format='PDF')
+            
+            return str(output_path) if output_path.exists() else None
+        except Exception as e:
+            logger.error(f"PIL PDF creation failed: {e}")
             return None
                 
         except Exception as e:
