@@ -1,0 +1,25 @@
+# Core dependencies
+streamlit>=1.28.0
+pillow>=10.0.0
+requests>=2.31.0
+
+# OpenAI integration
+openai>=1.3.0
+
+# Image generation
+stability-sdk>=0.8.0
+
+# PDF generation
+reportlab>=4.0.0
+fpdf2>=2.7.0
+img2pdf>=0.4.4
+
+# Text-to-Speech
+pyttsx3>=2.90
+gtts>=2.3.0
+
+# Audio processing
+pygame>=2.5.0
+
+# Additional utilities
+pathlib2>=2.3.7
