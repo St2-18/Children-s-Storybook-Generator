@@ -24,7 +24,7 @@ except Exception as _pdf_import_err:
     _logging.getLogger(__name__).error(f"Falling back to minimal PDF builder: {_pdf_import_err}")
     from pathlib import Path as _Path
     import tempfile as _tempfile
-    from typing import Dict as _Dict
+    from typing import Dict as _Dict, Optional as _Optional
     try:
         from PIL import Image as _PILImage, ImageDraw as _PILDraw, ImageFont as _PILFont
     except Exception as _e:
@@ -35,7 +35,7 @@ except Exception as _pdf_import_err:
             self.temp_dir = _Path(_tempfile.gettempdir()) / "storybook_pdfs"
             self.temp_dir.mkdir(exist_ok=True)
 
-        def create_pdf(self, story_data: _Dict, images: _Dict, output_filename: str = "storybook.pdf") -> str | None:
+        def create_pdf(self, story_data: _Dict, images: _Dict, output_filename: str = "storybook.pdf") -> _Optional[str]:
             if _PILImage is None:
                 return None
             try:
