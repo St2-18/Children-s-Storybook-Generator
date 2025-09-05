@@ -59,16 +59,36 @@ class PDFBuilder:
         try:
             output_path = self.temp_dir / output_filename
             
-            # Try different PDF creation methods
+            # Try different PDF creation methods with fallback chain
+            result_path: Optional[str] = None
+            errors: list[str] = []
+            
             if self.reportlab_available:
-                return self._create_pdf_reportlab(story_data, images, output_path)
-            elif self.fpdf_available:
-                return self._create_pdf_fpdf(story_data, images, output_path)
-            elif self.img2pdf_available:
-                return self._create_pdf_img2pdf(story_data, images, output_path)
-            else:
-                logger.error("No PDF library available")
-                return None
+                try:
+                    result_path = self._create_pdf_reportlab(story_data, images, output_path)
+                except Exception as e:
+                    errors.append(f"ReportLab error: {e}")
+                    logger.error(f"ReportLab error: {e}")
+            
+            if (not result_path or not Path(result_path).exists()) and self.fpdf_available:
+                try:
+                    result_path = self._create_pdf_fpdf(story_data, images, output_path)
+                except Exception as e:
+                    errors.append(f"FPDF error: {e}")
+                    logger.error(f"FPDF error: {e}")
+            
+            if (not result_path or not Path(result_path).exists()) and self.img2pdf_available:
+                try:
+                    result_path = self._create_pdf_img2pdf(story_data, images, output_path)
+                except Exception as e:
+                    errors.append(f"img2pdf error: {e}")
+                    logger.error(f"img2pdf error: {e}")
+            
+            if result_path and Path(result_path).exists():
+                return result_path
+            
+            logger.error("PDF creation failed. " + ("; ".join(errors) if errors else "No engines available"))
+            return None
                 
         except Exception as e:
             logger.error(f"PDF creation failed: {e}")
