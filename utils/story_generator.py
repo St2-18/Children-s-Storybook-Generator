@@ -157,7 +157,7 @@ class StoryGenerator:
         return [
             {
                 "page": 1,
-                "text": f"Once upon a time, there was a shy little fox named {character_name}. {character_name} loved to play alone in the garden, tending to beautiful flowers and watching them bloom. But something was missing - the garden felt lonely and quiet, and {character_name} wished for friends to share the beauty with.",
+                "text": f"Once upon a time, there was a shy little {character_name} who loved to play alone in the garden, tending to beautiful flowers and watching them bloom. But something was missing - the garden felt lonely and quiet, and {character_name} wished for friends to share the beauty with.",
                 "image_prompt": f"{style} illustration: {character_desc} sitting alone in a colorful garden with flowers, looking thoughtful and a bit sad"
             },
             {
@@ -167,13 +167,13 @@ class StoryGenerator:
             },
             {
                 "page": 3,
-                "text": f"{character_name} had a wonderful idea! The fox decided to share the most beautiful flowers from the garden with everyone. Carefully, {character_name} picked the prettiest blooms and arranged them in small bouquets for each friend, making sure each one was perfect.",
+                "text": f"{character_name} had a wonderful idea! {character_name} decided to share the most beautiful flowers from the garden with everyone. Carefully, {character_name} picked the prettiest blooms and arranged them in small bouquets for each friend, making sure each one was perfect.",
                 "image_prompt": f"{style} illustration: {character_desc} carefully picking colorful flowers and arranging them into small bouquets, with a determined and happy expression"
             },
             {
                 "page": 4,
                 "text": f"With a deep breath, {character_name} approached the other animals carrying the flower bouquets. 'Would you like some flowers?' {character_name} asked shyly. The animals' eyes lit up with joy! They loved the beautiful gifts and immediately invited {character_name} to join their games.",
-                "image_prompt": f"{style} illustration: {character_desc} offering flower bouquets to happy forest animals, all smiling and welcoming the fox into their group"
+                "image_prompt": f"{style} illustration: {character_desc} offering flower bouquets to happy forest animals, all smiling and welcoming {character_name} into their group"
             },
             {
                 "page": 5,
@@ -462,18 +462,23 @@ class StoryGenerator:
     
     def _extract_theme_from_prompt(self, prompt_lower: str) -> str:
         """Extract story theme from user prompt"""
-        if "dance" in prompt_lower or "music" in prompt_lower or "rhythm" in prompt_lower:
-            return "creativity and joy"
-        elif "learn" in prompt_lower or "teach" in prompt_lower or "learns" in prompt_lower:
-            return "learning and growth"
-        elif "share" in prompt_lower or "sharing" in prompt_lower:
+        # Check for most specific themes first (order matters!)
+        if "share" in prompt_lower or "sharing" in prompt_lower or "give" in prompt_lower or "gift" in prompt_lower:
             return "sharing and friendship"
-        elif "adventure" in prompt_lower or "explore" in prompt_lower or "discover" in prompt_lower:
-            return "adventure and discovery"
-        elif "help" in prompt_lower or "kind" in prompt_lower or "care" in prompt_lower:
+        elif "dance" in prompt_lower or "music" in prompt_lower or "rhythm" in prompt_lower or "sing" in prompt_lower:
+            return "creativity and joy"
+        elif "help" in prompt_lower or "kind" in prompt_lower or "care" in prompt_lower or "rescue" in prompt_lower or "save" in prompt_lower:
             return "kindness and helping"
-        elif "magic" in prompt_lower or "magical" in prompt_lower or "wonder" in prompt_lower:
+        elif "magic" in prompt_lower or "magical" in prompt_lower or "wonder" in prompt_lower or "spell" in prompt_lower or "enchanted" in prompt_lower:
             return "magic and wonder"
+        elif "fly" in prompt_lower or "flying" in prompt_lower or "sky" in prompt_lower or "cloud" in prompt_lower:
+            return "adventure and discovery"
+        elif "learn" in prompt_lower or "teach" in prompt_lower or "learns" in prompt_lower or "school" in prompt_lower or "study" in prompt_lower:
+            return "learning and growth"
+        elif "adventure" in prompt_lower or "explore" in prompt_lower or "discover" in prompt_lower or "journey" in prompt_lower or "travel" in prompt_lower:
+            return "adventure and discovery"
+        elif "friend" in prompt_lower or "friendship" in prompt_lower or "play" in prompt_lower or "together" in prompt_lower:
+            return "sharing and friendship"
         else:
             return "adventure and discovery"
     
